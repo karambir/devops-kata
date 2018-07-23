@@ -1,16 +1,6 @@
-image: python:3.6
+test:
+  image: python:3.6
 
-cache:
-  paths:
-      - .pip
-  key: "$CI_PROJECT_ID"
-
-before_script:
-  - mkdir -p .pip
-  - pip --cache-dir=.pip install ansible
-
-after_script:
-  - rm -f .pip/log/debug.log
-
-script:
-  - ansible-playbook -i hosts site.yml --syntax-check
+  script:
+    - pip --cache-dir=.pip install ansible
+    - ansible-playbook -i hosts site.yml --syntax-check
