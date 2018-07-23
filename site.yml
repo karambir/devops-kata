@@ -1,0 +1,8 @@
+---
+
+- name: "Configure app server(s)"
+  hosts: "app"
+  become: True
+
+  roles:
+    - { role: "nickjj.user", tags: "user" }

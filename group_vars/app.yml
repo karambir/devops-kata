@@ -1,0 +1,5 @@
+---
+
+user_name: "ubuntu"
+user_enable_passwordless_sudo: True
+user_local_ssh_key_path: "~/.ssh/id_rsa.pub"
