@@ -1,0 +1,8 @@
+---
+
+- name: ensure a default bashrc, inputrc and gitconfig file
+  copy: src={{ item.src }} dest=/home/{{ user_name }}/{{ item.dest }} owner={{ user_name }} group={{ user_name }}
+  with_items:
+    - { src: 'bashrc', dest: '.bashrc' }
+    - { src: 'inputrc', dest: '.inputrc' }
+    - { src: 'gitconfig', dest: '.gitconfig' }

@@ -6,3 +6,4 @@
 
   roles:
     - { role: "nickjj.user", tags: "user" }
+    - { role: "dotfiles", tags: "user" }
