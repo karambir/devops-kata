@@ -315,6 +315,7 @@ $RECYCLE.BIN/
 ### Packer ###
 # Cache objects
 packer_cache/
+packer_manifest.json
 
 # For built boxes
 *.box
@@ -322,6 +323,9 @@ packer_cache/
 ### Terraform ###
 # Local .terraform directories
 **/.terraform/*
+
+# packer generated tfvars
+terraform/packer.auto.tfvars
 
 # .tfstate files
 *.tfstate

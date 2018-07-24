@@ -20,7 +20,7 @@
   ],
   "builders": [
     {
-      "name": "aws-ami-ubuntu-init",
+      "name": "ubuntu-init",
       "type": "amazon-ebs",
       "profile": "{{ user `aws_profile`}}",
       "region": "{{user `aws_region`}}",
@@ -42,6 +42,17 @@
           "volume_type": "gp2"
         }
       ]
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "manifest",
+      "output": "packer_manifest.json",
+      "strip_path": true
+    },
+    {
+      "type": "shell-local",
+      "script": "./scripts/packer2tfvars.sh"
     }
   ]
 }
