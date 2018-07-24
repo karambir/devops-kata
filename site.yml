@@ -1,9 +1,20 @@
 ---
-
-- name: "Configure app server(s)"
-  hosts: "app"
-  become: True
-
+-
+  become: true
+  hosts: all
+  name: "Configure server(s)"
   roles:
-    - { role: "nickjj.user", tags: "user" }
-    - { role: "dotfiles", tags: "user" }
+    -
+      role: nickjj.user
+      tags: user
+    -
+      role: dotfiles
+      tags: user
+    -
+      nginx_http_params:
+        - "sendfile on"
+        - "access_log /var/log/nginx/access.log"
+      role: jdauphant.nginx
+      tags: web
+  vars:
+    ansible_python_interpreter: /usr/bin/python3

@@ -312,4 +312,28 @@ $RECYCLE.BIN/
 *.lnk
 
 
-# End of https://www.gitignore.io/api/vim,linux,macos,python,pycharm,ansible,windows,sublimetext,visualstudiocode
+### Packer ###
+# Cache objects
+packer_cache/
+
+# For built boxes
+*.box
+
+### Terraform ###
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+
+# Ignore any .tfvars files that are generated automatically for each Terraform run. Most
+# .tfvars files are managed as part of configuration and so should be included in
+# version control.
+#
+# example.tfvars
+
+# End of https://www.gitignore.io/api/packer,terraform,vim,linux,macos,python,pycharm,ansible,windows,sublimetext,visualstudiocode

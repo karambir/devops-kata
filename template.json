@@ -1,0 +1,47 @@
+{
+  "variables": {
+    "aws_profile": "default",
+    "aws_region": "us-west-2",
+    "ami_name": "ubuntu-init-{{isotime \"02-Jan-18 03_04_05\"}}",
+    "aws_access_key": "",
+    "aws_secret_key": ""
+  },
+  "provisioners": [
+    {
+      "type": "ansible",
+      "playbook_file": "./site.yml",
+      "groups": ["all"],
+      "user": "ubuntu",
+      "ansible_env_vars": [
+        "ANSIBLE_HOST_KEY_CHECKING=False",
+        "ANSIBLE_SSH_ARGS='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o AddKeysToAgent=no -o IdentitiesOnly=yes'"
+      ]
+    }
+  ],
+  "builders": [
+    {
+      "name": "aws-ami-ubuntu-init",
+      "type": "amazon-ebs",
+      "profile": "{{ user `aws_profile`}}",
+      "region": "{{user `aws_region`}}",
+      "access_key": "{{ user `aws_access_key`}}",
+      "secret_key": "{{ user `aws_secret_key`}}",
+      "instance_type": "t2.medium",
+      "source_ami": "ami-ba602bc2",
+      "ssh_username": "ubuntu",
+      "ami_name": "{{user `ami_name` | clean_ami_name}}",
+      "ami_description": "basic ubuntu server ami",
+      "tags": {
+        "Source": "Packer"
+      },
+      "launch_block_device_mappings": [
+        {
+          "delete_on_termination": true,
+          "device_name": "/dev/sda1",
+          "volume_size": "20",
+          "volume_type": "gp2"
+        }
+      ]
+    }
+  ]
+}
