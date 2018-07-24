@@ -24,3 +24,12 @@ variable "aws_region" {
 variable "aws_ami" {
   default = "ami-ba602bc2"
 }
+
+variable "project" {
+  default = "aws-init"
+}
+
+# project_short should be less 6 chars long
+variable "project_short" {
+  default = "aws"
+}

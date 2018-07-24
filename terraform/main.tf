@@ -6,6 +6,10 @@ provider "aws" {
 # Create a VPC to launch our instances into
 resource "aws_vpc" "default" {
   cidr_block = "10.0.0.0/16"
+
+  tags {
+    Name = "${var.project}"
+  }
 }
 
 # Create an internet gateway to give our subnet access to the outside world
@@ -25,12 +29,16 @@ resource "aws_subnet" "default" {
   vpc_id                  = "${aws_vpc.default.id}"
   cidr_block              = "10.0.1.0/24"
   map_public_ip_on_launch = true
+
+  tags {
+    Name = "${var.project}"
+  }
 }
 
 # A security group for the ELB so it is accessible via the web
 resource "aws_security_group" "elb" {
-  name        = "terraform_example_elb"
-  description = "Used in the terraform"
+  name        = "${var.project}-sg-elb"
+  description = "Used in the ubuntu init"
   vpc_id      = "${aws_vpc.default.id}"
 
   # HTTP access from anywhere
@@ -53,7 +61,7 @@ resource "aws_security_group" "elb" {
 # Our default security group to access
 # the instances over SSH and HTTP
 resource "aws_security_group" "default" {
-  name        = "terraform_example"
+  name        = "${var.project}-sg-backend"
   description = "Used in the terraform"
   vpc_id      = "${aws_vpc.default.id}"
 
@@ -83,17 +91,33 @@ resource "aws_security_group" "default" {
 }
 
 resource "aws_elb" "web" {
-  name = "terraform-example-elb"
+  name_prefix = "${var.project_short}-"
 
   subnets         = ["${aws_subnet.default.id}"]
   security_groups = ["${aws_security_group.elb.id}"]
-  instances       = ["${aws_instance.web.id}"]
 
   listener {
     instance_port     = 80
     instance_protocol = "http"
     lb_port           = 80
     lb_protocol       = "http"
+  }
+
+  health_check {
+    healthy_threshold   = 3
+    unhealthy_threshold = 6
+    timeout             = 3
+    target              = "HTTP:80/"
+    interval            = 30
+  }
+
+  cross_zone_load_balancing   = true
+  idle_timeout                = 400
+  connection_draining         = true
+  connection_draining_timeout = 400
+
+  tags {
+    Name = "${var.project}-elb"
   }
 }
 
@@ -102,41 +126,47 @@ resource "aws_key_pair" "auth" {
   public_key = "${file(var.public_key_path)}"
 }
 
-resource "aws_instance" "web" {
-  # The connection block tells our provisioner how to
-  # communicate with the resource (instance)
-  connection {
-    # The default username for our AMI
-    user = "ubuntu"
-
-    # The connection will use the local SSH agent for authentication.
-  }
+resource "aws_launch_configuration" "web" {
+  # Either omit the Launch Configuration name attribute, or specify a partial name with name_prefix
+  name_prefix = "${var.project}-lc-"
 
   instance_type = "t2.medium"
 
-  # Lookup the correct AMI based on the region
-  # we specified
-  ami = "${var.aws_ami}"
+  image_id = "${var.aws_ami}"
 
   # The name of our SSH keypair we created above.
   key_name = "${aws_key_pair.auth.id}"
 
   # Our Security group to allow HTTP and SSH access
-  vpc_security_group_ids = ["${aws_security_group.default.id}"]
+  security_groups = ["${aws_security_group.default.id}"]
 
-  # We're going to launch into the same subnet as our ELB. In a production
-  # environment it's more common to have a separate private subnet for
-  # backend instances.
-  subnet_id = "${aws_subnet.default.id}"
-
-  tags {
-    Name = "ubuntu-init-tf"
+  lifecycle {
+    create_before_destroy = true
   }
 
-  # Check status of nginx service
-  # provisioner "remote-exec" {
-  #   inline = [
-  #     "sudo service nginx status",
-  #   ]
-  # }
+  enable_monitoring = true
+}
+
+resource "aws_autoscaling_group" "web_asg" {
+  name = "${var.project}-asg-${aws_launch_configuration.web.name}"
+
+  launch_configuration = "${aws_launch_configuration.web.name}"
+
+  min_size = 1
+
+  max_size = 2
+
+  min_elb_capacity = 1
+
+  load_balancers = ["${aws_elb.web.id}"]
+
+  vpc_zone_identifier = ["${aws_subnet.default.id}"]
+
+  health_check_grace_period = 90
+
+  health_check_type = "ELB"
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
