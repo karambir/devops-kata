@@ -1,7 +1,7 @@
-# Infra setup
+# Devops katas
 [![Build Status](https://travis-ci.org/karambir/devops-kata.svg?branch=master)](https://travis-ci.org/karambir/devops-kata)
 
-Very basic infra setup using ansible, packer and terraform.
+Basic infra setup and provisioning using ansible, packer and terraform.
 
 ## For now, we do:
 
@@ -33,5 +33,15 @@ Change hosts in `hosts` file and run:
 - Verify an AMI is created `cat terraform/packer.auto.tfvars`
 - Provision infrastructure using terraform `terraform plan` and `terraform apply`
 - Run `terrafomr destroy` to delete everything unless you to keep all of that infra running
+
+## Help and Documentation
+
+- [Ansible docs](https://docs.ansible.com/)
+- [Packer docs](https://www.packer.io/docs/index.html)
+- [Terraform docs](https://www.terraform.io/docs/index.html)
+- Started terraform templates with this [official example](https://github.com/terraform-providers/terraform-provider-aws/tree/master/examples/two-tier)
+- Took configuration around Auto-scaling groups from [here](https://medium.com/@I_M_Harsh/build-and-deploy-using-jenkins-packer-and-terraform-40b2aafedaec)
+
+----
 
 Happy Devops
