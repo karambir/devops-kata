@@ -1,4 +1,5 @@
 # Infra setup
+[![Build Status](https://travis-ci.org/karambir/devops-kata.svg?branch=master)](https://travis-ci.org/karambir/devops-kata)
 
 Very basic infra setup using ansible, packer and terraform.
 
