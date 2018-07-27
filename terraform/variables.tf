@@ -26,10 +26,14 @@ variable "aws_ami" {
 }
 
 variable "project" {
-  default = "aws-init"
+  default = "edx-hawthorn"
 }
 
-# project_short should be less 6 chars long
+# project_short should be less than 6 chars
 variable "project_short" {
-  default = "aws"
+  default = "edx"
+}
+
+variable "project_environment" {
+  default = "production"
 }

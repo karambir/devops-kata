@@ -2,35 +2,47 @@
   "variables": {
     "aws_profile": "default",
     "aws_region": "us-west-2",
-    "ami_name": "ubuntu-init-{{isotime \"02-Jan-18 03_04_05\"}}",
+    "ami_name": "edx-hawthorn-{{isotime \"02-Jan-18 03_04_05\"}}",
     "aws_access_key": "",
-    "aws_secret_key": ""
+    "aws_secret_key": "",
+    "openedx_version": "open-release/hawthorn.master"
   },
   "provisioners": [
     {
-      "type": "ansible",
-      "playbook_file": "./site.yml",
-      "groups": ["all"],
-      "user": "ubuntu",
-      "ansible_env_vars": [
-        "ANSIBLE_HOST_KEY_CHECKING=False",
-        "ANSIBLE_SSH_ARGS='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o AddKeysToAgent=no -o IdentitiesOnly=yes'"
+      "type": "shell",
+      "inline": "wget https://raw.githubusercontent.com/edx/configuration/$OPENEDX_RELEASE/util/install/ansible-bootstrap.sh -O - | sudo bash",
+      "environment_vars": [
+        "OPENEDX_RELEASE={{ user `openedx_version` }}"
+      ]
+    },
+    {
+      "type": "shell",
+      "inline": "wget https://raw.githubusercontent.com/edx/configuration/$OPENEDX_RELEASE/util/install/generate-passwords.sh -O - | bash",
+      "environment_vars": [
+        "OPENEDX_RELEASE={{ user `openedx_version` }}"
+      ]
+    },
+    {
+      "type": "shell",
+      "inline": "wget https://raw.githubusercontent.com/edx/configuration/$OPENEDX_RELEASE/util/install/native.sh -O - | bash",
+      "environment_vars": [
+        "OPENEDX_RELEASE={{ user `openedx_version` }}"
       ]
     }
   ],
   "builders": [
     {
-      "name": "ubuntu-init",
+      "name": "edx-hawthorn",
       "type": "amazon-ebs",
       "profile": "{{ user `aws_profile`}}",
       "region": "{{user `aws_region`}}",
       "access_key": "{{ user `aws_access_key`}}",
       "secret_key": "{{ user `aws_secret_key`}}",
-      "instance_type": "t2.medium",
+      "instance_type": "m5.large",
       "source_ami": "ami-ba602bc2",
       "ssh_username": "ubuntu",
       "ami_name": "{{user `ami_name` | clean_ami_name}}",
-      "ami_description": "basic ubuntu server ami",
+      "ami_description": "basic openedx server ami",
       "tags": {
         "Source": "Packer"
       },
@@ -38,7 +50,7 @@
         {
           "delete_on_termination": true,
           "device_name": "/dev/sda1",
-          "volume_size": "20",
+          "volume_size": "40",
           "volume_type": "gp2"
         }
       ]

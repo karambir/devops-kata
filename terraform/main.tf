@@ -90,9 +90,19 @@ resource "aws_security_group" "default" {
   }
 }
 
-resource "aws_elb" "web" {
-  name_prefix = "${var.project_short}-"
+# resource "aws_s3_bucket" "lb_logs" {
+#   bucket_prefix = "${var.project}"
+#   acl           = "private"
 
+#   tags {
+#     Name        = "${var.project}"
+#     Environment = "${var.project_environment}"
+#   }
+# }
+
+resource "aws_elb" "web" {
+  name_prefix     = "${var.project_short}-"
+  internal        = false
   subnets         = ["${aws_subnet.default.id}"]
   security_groups = ["${aws_security_group.elb.id}"]
 
@@ -116,8 +126,15 @@ resource "aws_elb" "web" {
   connection_draining         = true
   connection_draining_timeout = 400
 
+  # access_logs {
+  #   bucket        = "${aws_s3_bucket.lb_logs.bucket}"
+  #   bucket_prefix = "${var.project_short}-lb"
+  #   enabled       = true
+  # }
+
   tags {
-    Name = "${var.project}-elb"
+    Name        = "${var.project}-elb"
+    Environment = "${var.project_environment}"
   }
 }
 
@@ -130,7 +147,7 @@ resource "aws_launch_configuration" "web" {
   # Either omit the Launch Configuration name attribute, or specify a partial name with name_prefix
   name_prefix = "${var.project}-lc-"
 
-  instance_type = "t2.medium"
+  instance_type = "m5.large"
 
   image_id = "${var.aws_ami}"
 
