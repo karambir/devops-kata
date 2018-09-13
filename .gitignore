@@ -341,3 +341,7 @@ crash.log
 # example.tfvars
 
 # End of https://www.gitignore.io/api/packer,terraform,vim,linux,macos,python,pycharm,ansible,windows,sublimetext,visualstudiocode
+
+# Custon
+packer.log
+edx_vars.yml

@@ -11,8 +11,8 @@ DESCRIPTION
 }
 
 variable "key_name" {
-  description = "Desired name of AWS key pair"
-  default     = "ubuntu-init"
+  description = "developer key"
+  default     = "edx-av"
 }
 
 variable "aws_region" {
@@ -26,7 +26,7 @@ variable "aws_ami" {
 }
 
 variable "project" {
-  default = "edx-hawthorn"
+  default = "edx-av"
 }
 
 # project_short should be less than 6 chars
@@ -36,4 +36,12 @@ variable "project_short" {
 
 variable "project_environment" {
   default = "production"
+}
+
+variable "edx_domain" {
+  default = "trainings.aifest.org"
+}
+
+variable "instance_type" {
+  default = "m5.xlarge"
 }

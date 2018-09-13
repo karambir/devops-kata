@@ -1,6 +1,13 @@
 # Specify the provider and access details
 provider "aws" {
+  version = "~> 1.28"
   region = "${var.aws_region}"
+}
+
+# Get ACM certificate for edx domain to be used
+data "aws_acm_certificate" "edx" {
+  domain   = "${var.edx_domain}"
+  statuses = ["ISSUED"]
 }
 
 # Create a VPC to launch our instances into
@@ -38,13 +45,20 @@ resource "aws_subnet" "default" {
 # A security group for the ELB so it is accessible via the web
 resource "aws_security_group" "elb" {
   name        = "${var.project}-sg-elb"
-  description = "Used in the ubuntu init"
+  description = "Used in the edx"
   vpc_id      = "${aws_vpc.default.id}"
 
   # HTTP access from anywhere
   ingress {
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -62,7 +76,7 @@ resource "aws_security_group" "elb" {
 # the instances over SSH and HTTP
 resource "aws_security_group" "default" {
   name        = "${var.project}-sg-backend"
-  description = "Used in the terraform"
+  description = "Used in the edx"
   vpc_id      = "${aws_vpc.default.id}"
 
   # SSH access from anywhere
@@ -113,6 +127,14 @@ resource "aws_elb" "web" {
     lb_protocol       = "http"
   }
 
+  listener {
+    instance_port     = 80
+    instance_protocol = "http"
+    lb_port           = 443
+    lb_protocol       = "https"
+    ssl_certificate_id = "${data.aws_acm_certificate.edx.arn}"
+  }
+
   health_check {
     healthy_threshold   = 3
     unhealthy_threshold = 6
@@ -147,7 +169,7 @@ resource "aws_launch_configuration" "web" {
   # Either omit the Launch Configuration name attribute, or specify a partial name with name_prefix
   name_prefix = "${var.project}-lc-"
 
-  instance_type = "m5.large"
+  instance_type = "${var.instance_type}"
 
   image_id = "${var.aws_ami}"
 
@@ -162,6 +184,12 @@ resource "aws_launch_configuration" "web" {
   }
 
   enable_monitoring = true
+
+  root_block_device {
+    volume_type = "gp2"
+    volume_size = 60
+    delete_on_termination = true
+  }
 }
 
 resource "aws_autoscaling_group" "web_asg" {
