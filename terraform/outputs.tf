@@ -1,3 +1,3 @@
-output "edx_app_private_ip" {
-  value = "${aws_instance.edx-app-server.private_ip}"
+output "elb_address" {
+  value = "${aws_elb.edx-elb.dns_name}"
 }
