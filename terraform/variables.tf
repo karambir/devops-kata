@@ -20,8 +20,13 @@ variable "aws_region" {
   default     = "us-west-2"
 }
 
+
+variable "aws_nginx_ami" {
+  default = "ami-05d8e8a721306bd5e"
+}
+
 # Ubuntu 16.04 LTS (x64)
-variable "aws_ami" {
+variable "aws_app_ami" {
   default = "ami-ba602bc2"
 }
 
@@ -42,6 +47,18 @@ variable "edx_domain" {
   default = "trainings.aifest.org"
 }
 
-variable "instance_type" {
+variable "edx_nginx_ip" {
+  default = "eipalloc-0ee83c9edcf49a5b8"
+}
+
+variable "edx_app_ip" {
+  default = "eipalloc-086f75095a3de7a4e"
+}
+
+variable "nginx_instance_type" {
+  default = "t2.medium"
+}
+
+variable "app_instance_type" {
   default = "m5.xlarge"
 }

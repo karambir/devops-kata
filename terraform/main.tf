@@ -4,12 +4,6 @@ provider "aws" {
   region = "${var.aws_region}"
 }
 
-# Get ACM certificate for edx domain to be used
-data "aws_acm_certificate" "edx" {
-  domain   = "${var.edx_domain}"
-  statuses = ["ISSUED"]
-}
-
 # Create a VPC to launch our instances into
 resource "aws_vpc" "default" {
   cidr_block = "10.0.0.0/16"
@@ -42,11 +36,19 @@ resource "aws_subnet" "default" {
   }
 }
 
-# A security group for the ELB so it is accessible via the web
-resource "aws_security_group" "elb" {
-  name        = "${var.project}-sg-elb"
-  description = "Used in the edx"
+# A security group for the external nginx server so it is accessible via the web
+resource "aws_security_group" "edx-nginx" {
+  name        = "${var.project}-sg-nginx"
+  description = "Used in the edx frontend nginx server"
   vpc_id      = "${aws_vpc.default.id}"
+
+  # SSH access from anywhere
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   # HTTP access from anywhere
   ingress {
@@ -73,10 +75,10 @@ resource "aws_security_group" "elb" {
 }
 
 # Our default security group to access
-# the instances over SSH and HTTP
-resource "aws_security_group" "default" {
-  name        = "${var.project}-sg-backend"
-  description = "Used in the edx"
+# the instances over SSH
+resource "aws_security_group" "edx-app" {
+  name        = "${var.project}-sg-edx-app"
+  description = "Used in the edx backend services"
   vpc_id      = "${aws_vpc.default.id}"
 
   # SSH access from anywhere
@@ -87,10 +89,74 @@ resource "aws_security_group" "default" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # HTTP access from the VPC
+  # HTTP access from vpc
+  #lms
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = 18000
+    to_port     = 18000
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+  #insights
+  ingress {
+    from_port   = 18110
+    to_port     = 18110
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+  #discovery
+  ingress {
+    from_port   = 18381
+    to_port     = 18381
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+  #ecommerce
+  ingress {
+    from_port   = 18130
+    to_port     = 18130
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+  #analytics
+  ingress {
+    from_port   = 18100
+    to_port     = 18100
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+  #xqueue
+  ingress {
+    from_port   = 18040
+    to_port     = 18040
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+  #cms
+  ingress {
+    from_port   = 18010
+    to_port     = 18010
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+  #forum
+  ingress {
+    from_port   = 14567
+    to_port     = 14567
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+  #certs
+  ingress {
+    from_port   = 18090
+    to_port     = 18090
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+  #credentials
+  ingress {
+    from_port   = 18150
+    to_port     = 18150
     protocol    = "tcp"
     cidr_blocks = ["10.0.0.0/16"]
   }
@@ -104,114 +170,73 @@ resource "aws_security_group" "default" {
   }
 }
 
-# resource "aws_s3_bucket" "lb_logs" {
-#   bucket_prefix = "${var.project}"
-#   acl           = "private"
-
-#   tags {
-#     Name        = "${var.project}"
-#     Environment = "${var.project_environment}"
-#   }
-# }
-
-resource "aws_elb" "web" {
-  name_prefix     = "${var.project_short}-"
-  internal        = false
-  subnets         = ["${aws_subnet.default.id}"]
-  security_groups = ["${aws_security_group.elb.id}"]
-
-  listener {
-    instance_port     = 80
-    instance_protocol = "http"
-    lb_port           = 80
-    lb_protocol       = "http"
-  }
-
-  listener {
-    instance_port     = 80
-    instance_protocol = "http"
-    lb_port           = 443
-    lb_protocol       = "https"
-    ssl_certificate_id = "${data.aws_acm_certificate.edx.arn}"
-  }
-
-  health_check {
-    healthy_threshold   = 3
-    unhealthy_threshold = 6
-    timeout             = 3
-    target              = "HTTP:80/"
-    interval            = 30
-  }
-
-  cross_zone_load_balancing   = true
-  idle_timeout                = 400
-  connection_draining         = true
-  connection_draining_timeout = 400
-
-  # access_logs {
-  #   bucket        = "${aws_s3_bucket.lb_logs.bucket}"
-  #   bucket_prefix = "${var.project_short}-lb"
-  #   enabled       = true
-  # }
-
-  tags {
-    Name        = "${var.project}-elb"
-    Environment = "${var.project_environment}"
-  }
-}
-
 resource "aws_key_pair" "auth" {
   key_name   = "${var.key_name}"
   public_key = "${file(var.public_key_path)}"
 }
 
-resource "aws_launch_configuration" "web" {
-  # Either omit the Launch Configuration name attribute, or specify a partial name with name_prefix
-  name_prefix = "${var.project}-lc-"
+resource "aws_instance" "edx-nginx-server" {
+  instance_type = "${var.nginx_instance_type}"
 
-  instance_type = "${var.instance_type}"
-
-  image_id = "${var.aws_ami}"
+  ami = "${var.aws_nginx_ami}"
 
   # The name of our SSH keypair we created above.
   key_name = "${aws_key_pair.auth.id}"
 
   # Our Security group to allow HTTP and SSH access
-  security_groups = ["${aws_security_group.default.id}"]
+  vpc_security_group_ids = ["${aws_security_group.edx-nginx.id}"]
+  
+  subnet_id = "${aws_subnet.default.id}"
 
-  lifecycle {
-    create_before_destroy = true
+  monitoring = true
+
+  root_block_device {
+    volume_type = "gp2"
+    volume_size = 30
+    delete_on_termination = false
   }
 
-  enable_monitoring = true
+  tags {
+    Name = "${var.project}-nginx"
+    Domain = "${var.edx_domain}"
+    Environment = "${var.project_environment}"
+  }
+}
+
+resource "aws_instance" "edx-app-server" {
+  instance_type = "${var.app_instance_type}"
+
+  ami = "${var.aws_app_ami}"
+
+  # The name of our SSH keypair we created above.
+  key_name = "${aws_key_pair.auth.id}"
+
+  # Our Security group to allow HTTP and SSH access
+  vpc_security_group_ids = ["${aws_security_group.edx-app.id}"]
+
+  subnet_id = "${aws_subnet.default.id}"
+
+  monitoring = true
 
   root_block_device {
     volume_type = "gp2"
     volume_size = 60
     delete_on_termination = true
   }
+
+  tags {
+    Name = "${var.project}"
+    Domain = "${var.edx_domain}"
+    Environment = "${var.project_environment}"
+  }
 }
 
-resource "aws_autoscaling_group" "web_asg" {
-  name = "${var.project}-asg-${aws_launch_configuration.web.name}"
+resource "aws_eip_association" "edx-nginx-ip" {
+  instance_id   = "${aws_instance.edx-nginx-server.id}"
+  allocation_id = "${var.edx_nginx_ip}"
+}
 
-  launch_configuration = "${aws_launch_configuration.web.name}"
-
-  min_size = 1
-
-  max_size = 2
-
-  min_elb_capacity = 1
-
-  load_balancers = ["${aws_elb.web.id}"]
-
-  vpc_zone_identifier = ["${aws_subnet.default.id}"]
-
-  health_check_grace_period = 90
-
-  health_check_type = "ELB"
-
-  lifecycle {
-    create_before_destroy = true
-  }
+resource "aws_eip_association" "edx-app-ip" {
+  instance_id   = "${aws_instance.edx-app-server.id}"
+  allocation_id = "${var.edx_app_ip}"
 }
