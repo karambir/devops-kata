@@ -14,10 +14,12 @@ before_script:
   - wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip -O /tmp/terraform.zip
   - unzip /tmp/terraform.zip -d $PWD/travis-bin/
   - export PATH=$PATH:$PWD/travis-bin/
+  - export AWS_EC2_INSTANCE=m5.large
+  - touch edx_vars.yml
 
 script:
   - ansible-playbook -i hosts site.yml --syntax-check
-  - packer validate packer.json
+  - packer validate packer-initial.json
   - cd terraform && terraform init && terraform validate -check-variables=false
 
 notifications:

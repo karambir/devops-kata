@@ -22,7 +22,7 @@ Using packer log: ${PACKER_LOG_PATH}
 Using region: ${AWS_REGION}
 Using EC2 instance type: ${AWS_EC2_INSTANCE}"
 
-packer build packer.json
+packer build packer-initial.json
 rm -f terraform/packer.auto.tfvars
 
 echo aws_app_ami=\"`jq -r '.builds[-1].artifact_id' packer_manifest.json | cut -d':' -f2`\" >> terraform/packer.auto.tfvars
