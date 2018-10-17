@@ -19,11 +19,12 @@ fi
 
 EDX_STATELESS='stateless'
 EDX_DBS='dbs'
+EDX_SANDBOX='sandbox'
 PACKER_CONF='stateless'
 
 if [ -z $1 ]
 then
-  echo "No option given. Use option ${EDX_STATELESS} or ${EDX_DBS} with script."
+  echo "No option given. Use option ${EDX_SANDBOX}, ${EDX_STATELESS} or ${EDX_DBS} with script."
   exit 1;
 elif [ -n $1 ]
 then
@@ -38,8 +39,8 @@ Using region: ${AWS_REGION}
 Using EC2 instance type: ${AWS_EC2_INSTANCE}"
 
 case $PACKER_CONF in
-    $EDX_STATELESS)
-        packer build packer-edx-stateless.json
+    $EDX_STATELESS|$EDX_SANDBOX)
+        packer build packer-edx-$PACKER_CONF.json
         rm -f terraform/packer.auto.tfvars
         echo aws_app_ami=\"`jq -r '.builds[-1].artifact_id' packer_manifest.json | cut -d':' -f2`\" >> terraform/packer.auto.tfvars
         echo aws_region=\"$AWS_REGION\" >> terraform/packer.auto.tfvars
