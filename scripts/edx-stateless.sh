@@ -113,5 +113,19 @@ sudo -H pip install -r requirements.txt
 ##
 ## Run the edx_sandbox.yml playbook in the configuration/playbooks directory
 ##
-cd /var/tmp/configuration/playbooks && sudo -E ansible-playbook -c local ./edx_sandbox.yml -i "localhost," $EXTRA_VARS "$@"
+cd /var/tmp/configuration/playbooks && sudo -E ansible-playbook -c local ./av_sandbox.yml -i "localhost," $EXTRA_VARS "$@"
 ansible_status=$?
+
+if [[ $ansible_status -ne 0 ]]; then
+    echo " "
+    echo "========================================"
+    echo "Ansible failed!"
+    echo "----------------------------------------"
+    echo "If you need help, see https://open.edx.org/getting-help ."
+    echo "When asking for help, please provide as much information as you can."
+    echo "These might be helpful:"
+    echo "    Your log file is at $log_file"
+    echo "    Your environment:"
+    env | egrep -i 'version|release' | sed -e 's/^/        /'
+    echo "========================================"
+fi

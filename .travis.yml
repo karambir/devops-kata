@@ -19,7 +19,8 @@ before_script:
 
 script:
   - ansible-playbook -i hosts site.yml --syntax-check
-  - packer validate packer-initial.json
+  - packer validate packer-edx-stateless.json
+  - packer validate packer-edx-dbs.json
   - cd terraform && terraform init && terraform validate -check-variables=false
 
 notifications:

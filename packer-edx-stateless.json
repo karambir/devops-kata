@@ -18,20 +18,13 @@
       "environment_vars": ["OPENEDX_RELEASE={{ user `edx_version` }}"]
     },
     {
-      "type": "shell",
-      "inline":
-        "wget https://raw.githubusercontent.com/edx/configuration/$OPENEDX_RELEASE/util/install/generate-passwords.sh -O - | bash",
-        "environment_vars": ["OPENEDX_RELEASE={{ user `edx_version` }}"]
-    },
-    {
       "type": "file",
       "source": "edx_vars.yml",
       "destination": "/home/ubuntu/edx_vars.yml"
     },
     {
       "type": "shell",
-      "inline":
-        "wget https://gitlab.analyticsvidhya.com/edx/configuration/raw/$CONFIGURATION_VERSION/util/install/native.sh -O - | bash",
+      "script": "scripts/edx-stateless.sh",
       "environment_vars": ["OPENEDX_RELEASE={{ user `edx_version` }}", "EDX_PLATFORM_VERSION={{ user `edx_platform_version` }}", "CONFIGURATION_VERSION={{ user `edx_platform_version` }}", "EXTRA_VARS={{ user `edx_vars` }}"]
     }
   ],

@@ -1,0 +1,73 @@
+{
+  "variables": {
+    "aws_profile": "default",
+    "aws_region": "{{env `AWS_REGION`}}",
+    "aws_ec2_instance": "{{env `AWS_EC2_INSTANCE`}}",
+    "ami_name": "edx-{{isotime \"02-Jan-2006 Mon 03_04_05MST\"}}",
+    "aws_access_key": "",
+    "aws_secret_key": "",
+    "edx_version": "{{env `EDX_VERSION`}}",
+    "edx_platform_version": "{{env `EDX_PLATFORM_VERSION`}}",
+    "edx_vars": "{{env `EDX_VARS`}}"
+  },
+  "provisioners": [
+    {
+      "type": "shell",
+      "script": "scripts/ansible-bootstrap.sh",
+      "execute_command": "sudo sh -c '{{ .Vars }} {{ .Path }}'",
+      "environment_vars": ["OPENEDX_RELEASE={{ user `edx_version` }}"]
+    },
+    {
+      "type": "file",
+      "source": "edx_vars.yml",
+      "destination": "/home/ubuntu/edx_vars.yml"
+    },
+    {
+      "type": "shell",
+      "script": "scripts/edx-dbs.sh",
+      "environment_vars": ["OPENEDX_RELEASE={{ user `edx_version` }}", "EDX_PLATFORM_VERSION={{ user `edx_platform_version` }}", "CONFIGURATION_VERSION={{ user `edx_platform_version` }}", "EXTRA_VARS={{ user `edx_vars` }}"]
+    }
+  ],
+  "builders": [
+    {
+      "name": "edx-dbs",
+      "type": "amazon-ebs",
+      "profile": "{{ user `aws_profile`}}",
+      "region": "{{user `aws_region`}}",
+      "access_key": "{{ user `aws_access_key`}}",
+      "secret_key": "{{ user `aws_secret_key`}}",
+      "instance_type": "{{ user `aws_ec2_instance`}}",
+      "source_ami_filter": {
+        "filters": {
+          "virtualization-type": "hvm",
+          "name": "ubuntu/images/*ubuntu-xenial-16.04-amd64-server-*",
+          "root-device-type": "ebs"
+        },
+        "owners": ["099720109477"],
+        "most_recent": true
+      },
+      "ssh_username": "ubuntu",
+      "ami_name": "{{user `ami_name` | clean_ami_name}}",
+      "ami_description": "basic openedx server ami",
+      "tags": {
+        "Source": "Packer",
+        "OpenEDX": "{{user `edx_version`}}"
+      },
+      "launch_block_device_mappings": [
+        {
+          "delete_on_termination": true,
+          "device_name": "/dev/sda1",
+          "volume_size": "20",
+          "volume_type": "gp2"
+        }
+      ]
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "manifest",
+      "output": "packer_manifest.json",
+      "strip_path": true
+    }
+  ]
+}
